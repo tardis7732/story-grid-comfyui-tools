@@ -68,29 +68,6 @@
 
 `Image 1` 같은 표현은 이 워크플로우가 전달하는 첨부 순서를 설명합니다. 인물 설명은 파일명 대신 첨부 순서와 역할을 연결해 작성합니다. 직접 준비한 이미지는 경로 칸에 한 줄에 하나씩 입력하고, 이미지를 추가·삭제하거나 순서를 바꿨다면 역할 설명도 함께 맞춰주세요. 그리드 참고를 끄면 첫 어셋이 Image 1이 됩니다.
 
-## 예제와 저장 결과
-
-원하는 JSON을 ComfyUI에 불러와 참고 이미지와 장면 설명을 바꾸면 됩니다.
-
-| 스타일 | 가로 컷 16:9 | 세로 컷 9:16 | 정사각 컷 1:1 |
-| --- | --- | --- | --- |
-| 연필 스토리보드 | [JSON](examples/workflows/pencil_landscape.json) | [JSON](examples/workflows/pencil_portrait.json) | [JSON](examples/workflows/pencil_square.json) |
-| 페인터리 3D | [JSON](examples/workflows/painterly_landscape.json) | [JSON](examples/workflows/painterly_portrait.json) | [JSON](examples/workflows/painterly_square.json) |
-| 실사 시네마틱 | [JSON](examples/workflows/cinematic_landscape.json) | [JSON](examples/workflows/cinematic_portrait.json) | [JSON](examples/workflows/cinematic_square.json) |
-
-**실제 생성 결과는 다섯 보드**, 예제 JSON은 **아홉 조합의 설정 템플릿**입니다. 위 비교 이미지는 실제 생성 보드를 보기 쉽게 배치한 편집본입니다. Gemini·1K·4K의 생성 비교 결과는 포함하지 않습니다.
-
-기본 저장 위치는 `ComfyUI/output/<output_prefix>/<실행 시간>/`입니다.
-
-```text
-generated_grid.png       전체 보드
-cells/grid/
-  cell_01_r1_c1.png       첫 번째 컷
-  cell_02_r1_c2.png       두 번째 컷
-  ...
-manifest.json            프롬프트, 보드 크기, 컷 좌표와 저장 정보
-```
-
 ## 사용하면서 확인한 점
 
 이번 뉴욕 추격 장면 테스트에서는 **GPT Image 2가 원하는 스토리보드를 더 안정적으로 만들었습니다.** 이 제작 경험을 바탕으로 기본 예제는 GPT Image 2로 설정했습니다.
@@ -99,5 +76,3 @@ manifest.json            프롬프트, 보드 크기, 컷 좌표와 저장 정�
 - 컷이 많아질수록 같은 보드 해상도에서 한 컷에 배정되는 픽셀은 줄어듭니다.
 - 모델마다 지원 크기가 달라 보드에 맞추는 과정에서 크기 조정이나 가장자리 잘림이 생길 수 있습니다. 현재 GPT 크기 계산은 긴 변 3840px·약 829만 픽셀 이내에서 4K 단계를 구성하며, Gemini는 가까운 지원 비율을 사용합니다.
 - 크레딧 절감 폭은 선택한 모델·보드 크기·개별 생성 방식에 따라 달라집니다.
-
-워크플로우 캡처에는 [ComfyUI Workflow Image Export](https://github.com/nomadoor/ComfyUI-Workflow-Image-Export)를 사용했습니다.

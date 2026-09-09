@@ -68,29 +68,6 @@ Labels such as `Image 1` describe the attachment order supplied by this workflow
 
 The starter workflow defaults to **pencil storyboard · 16:9 panels · GPT Image 2 · 2K**.
 
-## Examples and saved output
-
-Load a JSON file in ComfyUI, then replace the reference images and shot sequence.
-
-| Style | Landscape panels 16:9 | Portrait panels 9:16 | Square panels 1:1 |
-| --- | --- | --- | --- |
-| Pencil storyboard | [JSON](examples/workflows/pencil_landscape.json) | [JSON](examples/workflows/pencil_portrait.json) | [JSON](examples/workflows/pencil_square.json) |
-| Painterly 3D | [JSON](examples/workflows/painterly_landscape.json) | [JSON](examples/workflows/painterly_portrait.json) | [JSON](examples/workflows/painterly_square.json) |
-| Live-action cinematic | [JSON](examples/workflows/cinematic_landscape.json) | [JSON](examples/workflows/cinematic_portrait.json) | [JSON](examples/workflows/cinematic_square.json) |
-
-There are **five actual generated boards** and **nine configuration templates**. The comparison images arrange those generated boards for easier viewing. They do not include generation comparisons for Gemini, 1K, or 4K.
-
-The default output location is `ComfyUI/output/<output_prefix>/<run timestamp>/`.
-
-```text
-generated_grid.png       Full storyboard sheet
-cells/grid/
-  cell_01_r1_c1.png       First panel
-  cell_02_r1_c2.png       Second panel
-  ...
-manifest.json            Prompt, board dimensions, crop coordinates, and saved files
-```
-
 ## Observations and practical limits
 
 In this New York chase sequence test, **GPT Image 2 produced the intended storyboards more consistently.** The examples default to GPT Image 2 based on that production experience.
@@ -99,5 +76,3 @@ In this New York chase sequence test, **GPT Image 2 produced the intended storyb
 - More panels share the same board resolution, leaving fewer pixels for each shot.
 - Supported sizes differ between models. Fitting the board can involve resizing or edge cropping. The current GPT sizing helper fits its 4K tier within a 3840px longest edge and approximately 8.29 million pixels; Gemini uses the nearest supported aspect ratio.
 - Credit savings depend on the model, board size, and the individual-shot generation method being compared.
-
-Workflow captures were made with [ComfyUI Workflow Image Export](https://github.com/nomadoor/ComfyUI-Workflow-Image-Export).
