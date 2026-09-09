@@ -1,5 +1,5 @@
 {
-  "id": "84b12a3a-cf59-5881-b162-c7d71ed397f2",
+  "id": "17f2927a-473d-5864-99e0-8741a9d3f985",
   "revision": 10,
   "last_node_id": 36,
   "last_link_id": 38,
@@ -324,7 +324,7 @@
           ]
         }
       ],
-      "title": "LAYOUT · 행 / 열 / 컷 비율",
+      "title": "LAYOUT / Square panels 1:1",
       "properties": {
         "Node name for S&R": "StoryGridReference"
       },
@@ -332,8 +332,8 @@
         "",
         3,
         4,
-        3072,
-        1296,
+        2048,
+        1536,
         4,
         true,
         ""
@@ -661,7 +661,7 @@
           ]
         }
       ],
-      "title": "STYLE · 공통 그림체와 시각 규칙",
+      "title": "STYLE / Painterly 3D",
       "properties": {
         "cnr_id": "comfy-core",
         "ver": "0.32.0",
@@ -669,9 +669,9 @@
         "story_grid_style_presets": true
       },
       "widgets_values": [
-        "STYLE:\nProfessional film production storyboard, hand-drawn pencil sketch on white paper.\nLoose graphite linework, rough construction lines, unfinished concept drawing quality.\nBlack and white only, no color, no shading except minimal pencil hatching.\nSimple but readable character faces and anatomy.\nBackgrounds are loosely sketched with perspective lines and only essential environmental details.\nDynamic cinematic compositions, varied camera angles, strong sense of movement and action.\nLooks like an actual pre-production storyboard drawn quickly by a professional storyboard artist.\nMultiple rectangular storyboard panels arranged cleanly on a white page.\nSmall handwritten shot numbers beside panels.\nOccasional rough motion lines and perspective guides.\nNOT a finished comic book, NOT polished illustration, NOT manga panels, NOT cel shading.\n\nVISUAL PRIORITY:\nFocus on shot composition, camera placement, character blocking, action readability, perspective, and continuity rather than illustration detail.\n\nRough storyboard thumbnails, graphite pencil, white storyboard paper, production drawing, cinematic blocking, loose sketch lines, monochrome, unfinished previsualization artwork.\n\nNo logos, no captions, no speech bubbles, no polished comic rendering, no color."
+        "STYLE:\nStylized painterly 3D animation, painterly CGI, hand-painted textures, stylized facial proportions, soft cinematic lighting, warm volumetric sunlight, expressive character design, slightly painterly rendering, animated feature film aesthetic.\nRich but controlled color, tactile surfaces, appealing shapes, and expressive faces with consistent character identity and costumes.\nEach panel looks like a cinematic frame from a beautifully crafted animated feature film.\nDynamic cinematic compositions, varied camera angles, readable silhouettes, and a strong sense of movement and action.\nArrange the sequence in the rectangular panels of the supplied grid layout.\n\nVISUAL PRIORITY:\nFocus on shot composition, camera placement, character blocking, action readability, perspective, and continuity across all shots.\n\nNo logos, no captions, no speech bubbles, no pencil sketch rendering, no manga panels, no flat cel shading."
       ],
-      "color": "#4d526e",
+      "color": "#bd9473",
       "bgcolor": "#2a2c40"
     },
     {
@@ -811,9 +811,9 @@
       "widgets_values": [
         3,
         4,
-        1920,
-        1080,
-        "story_grid_examples",
+        2048,
+        1536,
+        "story_grid_examples/painterly_square",
         4,
         true,
         true,
@@ -915,8 +915,8 @@
       },
       "widgets_values": [
         "story_grid_examples/pursuer.png\nstory_grid_examples/runner.png",
-        1920,
-        1080,
+        2048,
+        1536,
         true,
         ""
       ],
@@ -1435,14 +1435,14 @@
     },
     {
       "id": 8,
-      "title": "01  STYLE / 공통 스타일",
+      "title": "01  STYLE / Painterly 3D",
       "bounding": [
         40,
         820,
         570,
         1210
       ],
-      "color": "#8984a9",
+      "color": "#bd9473",
       "flags": {}
     },
     {
@@ -1459,7 +1459,7 @@
     },
     {
       "id": 10,
-      "title": "03  GENERATE & LAYOUT / 해상도와 그리드",
+      "title": "03  GENERATE & LAYOUT / Square panels 1:1",
       "bounding": [
         1280,
         820,
@@ -1505,8 +1505,8 @@
     },
     "workflowRendererVersion": "Vue-corrected",
     "info": {
-      "name": "Story Grid · Assets, Style & Resolution",
-      "description": "03 GENERATE에서 모델과 1K·2K·4K를 선택합니다. LAYOUT에서 행·열·컷 비율을 정하고, ASSETS에서 Image 번호별 역할을 설명합니다."
+      "name": "Story Grid / Painterly 3D / Square panels 1:1",
+      "description": "Ready-to-run template: Painterly 3D, 3 rows x 4 columns, 1:1 panels. Default: GPT Image 2, 2K. Install the included reference images first."
     }
   },
   "version": 0.4

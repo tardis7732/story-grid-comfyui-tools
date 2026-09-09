@@ -1,6 +1,7 @@
 import json
 import re
 import time
+from math import gcd, isqrt
 from pathlib import Path
 
 import folder_paths
@@ -115,6 +116,16 @@ def _parse_reference_paths(value):
     return paths
 
 
+def resolve_reference_path(path_text):
+    path = Path(path_text).expanduser()
+    if path.is_absolute():
+        return path
+    input_path = Path(folder_paths.get_input_directory()) / path
+    if input_path.is_file() or not path.is_file():
+        return input_path
+    return path.resolve()
+
+
 def _contain_on_canvas(image, width, height):
     image = image.convert("RGB")
     canvas = Image.new("RGB", (width, height), "white")
@@ -125,13 +136,24 @@ def _contain_on_canvas(image, width, height):
     return canvas
 
 
-def _build_credit_prompt(scenario, rows, columns, width, height, prompts):
+def _build_credit_prompt(scenario, rows, columns, width, height, prompts, show_cell_numbers=False):
+    board_divisor = gcd(width, height)
+    cell_width = width * rows
+    cell_height = height * columns
+    cell_divisor = gcd(cell_width, cell_height)
+    text_policy = (
+        "Include only small shot numbers matching the reference grid. "
+        "Do not add captions, speech bubbles, other labels, logos, watermarks, or extra text."
+        if show_cell_numbers
+        else "Do not add captions, speech bubbles, labels, panel numbers, watermarks, or extra text."
+    )
     lines = [
         f"Use the first attached reference image as an exact {rows} row by {columns} column storyboard grid.",
-        f"Generate one combined {width}x{height} 16:9 image sheet, not separate files.",
+        f"Generate one combined {width}x{height} image sheet with a {width // board_divisor}:{height // board_divisor} aspect ratio, not separate files.",
+        f"Each grid cell has a {cell_width // cell_divisor}:{cell_height // cell_divisor} aspect ratio before border trimming.",
         "Every grid cell must contain one distinct illustration matching its assigned prompt.",
         "Keep the panel borders aligned to the reference grid so the result can be sliced cleanly.",
-        "Do not add captions, speech bubbles, labels, panel numbers, watermarks, or extra text.",
+        text_policy,
         "Keep visual style consistent across all cells.",
         "Use any additional attached reference images for character, prop, and location identity.",
         "",
@@ -193,8 +215,8 @@ class StoryGridReference:
                 "scenario": ("STRING", {"default": DEFAULT_SCENARIO, "multiline": True}),
                 "rows": ("INT", {"default": 3, "min": 1, "max": 12, "step": 1}),
                 "columns": ("INT", {"default": 4, "min": 1, "max": 12, "step": 1}),
-                "width": ("INT", {"default": 1920, "min": 256, "max": 4096, "step": 16}),
-                "height": ("INT", {"default": 1080, "min": 256, "max": 4096, "step": 16}),
+                "width": ("INT", {"default": 1920, "min": 256, "max": 4096, "step": 1}),
+                "height": ("INT", {"default": 1080, "min": 256, "max": 4096, "step": 1}),
                 "grid_line_width": ("INT", {"default": 4, "min": 0, "max": 64, "step": 1}),
                 "show_cell_numbers": ("BOOLEAN", {"default": False}),
             }
@@ -213,7 +235,9 @@ class StoryGridReference:
         grid_line_width = int(grid_line_width)
         prompts = _cell_prompts(scenario, rows, columns)
         reference = _draw_grid_reference(width, height, rows, columns, grid_line_width, bool(show_cell_numbers))
-        credit_prompt = _build_credit_prompt(scenario, rows, columns, width, height, prompts)
+        credit_prompt = _build_credit_prompt(
+            scenario, rows, columns, width, height, prompts, show_cell_numbers=bool(show_cell_numbers)
+        )
         return (_pil_to_tensor(reference), credit_prompt, rows, columns, width, height)
 
 
@@ -229,6 +253,7 @@ class StoryGridReferenceBatch:
             },
             "optional": {
                 "include_grid_reference": ("BOOLEAN", {"default": True}),
+                "asset_descriptions": ("STRING", {"forceInput": True, "default": ""}),
             },
         }
 
@@ -244,6 +269,7 @@ class StoryGridReferenceBatch:
         target_width,
         target_height,
         include_grid_reference=True,
+        asset_descriptions="",
     ):
         target_width = int(target_width)
         target_height = int(target_height)
@@ -255,17 +281,17 @@ class StoryGridReferenceBatch:
         if include_grid_reference:
             grid_image = _tensor_to_pil_list(reference_grid)[0]
             images.append(_fit_to_target(grid_image, target_width, target_height))
-            notes.append("1. grid layout reference")
+            notes.append("Image 1: grid layout reference")
 
         missing = []
         for path_text in _parse_reference_paths(reference_image_paths):
-            path = Path(path_text).expanduser()
+            path = resolve_reference_path(path_text)
             if not path.exists() or not path.is_file():
-                missing.append(path_text)
+                missing.append(str(path))
                 continue
             with Image.open(path) as image:
                 images.append(_contain_on_canvas(image, target_width, target_height))
-            notes.append(f"{len(notes) + 1}. {path.name}")
+            notes.append(f"Image {len(notes) + 1}: asset reference")
 
         if missing:
             raise FileNotFoundError("Missing reference image path(s): " + "; ".join(missing))
@@ -274,7 +300,64 @@ class StoryGridReferenceBatch:
             raise ValueError("At least one reference image is required.")
 
         note_text = "Attached reference image order:\n" + "\n".join(notes)
+        if asset_descriptions.strip():
+            note_text += "\n\nAsset roles and appearance:\n" + asset_descriptions.strip()
         return (_pil_batch_to_tensor(images), note_text)
+
+
+class StoryGridAPISize:
+    @classmethod
+    def INPUT_TYPES(cls):
+        return {
+            "required": {
+                "width": ("INT", {"forceInput": True}),
+                "height": ("INT", {"forceInput": True}),
+            }
+        }
+
+    RETURN_TYPES = ("COMBO", "INT", "INT")
+    RETURN_NAMES = ("gemini_aspect_ratio", "gpt_width", "gpt_height")
+    FUNCTION = "resolve"
+    CATEGORY = "Storyboard/Grid"
+
+    def resolve(self, width, height):
+        width = int(width)
+        height = int(height)
+        if width <= 0 or height <= 0:
+            raise ValueError("Board width and height must be positive.")
+        if max(width, height) > 3 * min(width, height):
+            raise ValueError("The board aspect ratio exceeds GPT Image 2's 3:1 limit. Adjust the grid or board size.")
+
+        divisor = gcd(width, height)
+        ratio_width = width // divisor
+        ratio_height = height // divisor
+        ratio = f"{ratio_width}:{ratio_height}"
+        gemini_ratio = {
+            "1:1": "1:1", "2:3": "2:3", "3:2": "3:2", "3:4": "3:4", "4:3": "4:3",
+            "4:5": "4:5", "5:4": "5:4", "9:16": "9:16", "16:9": "16:9", "7:3": "21:9",
+        }.get(ratio, "auto")
+
+        unit_width = ratio_width * 16
+        unit_height = ratio_height * 16
+        minimum_scale = max((1024 + unit_width - 1) // unit_width, (1024 + unit_height - 1) // unit_height)
+        maximum_scale = min(3840 // unit_width, 3840 // unit_height, isqrt(8_294_400 // (unit_width * unit_height)))
+        if minimum_scale <= maximum_scale:
+            scale = min(maximum_scale, max(minimum_scale, round(width / unit_width)))
+            return (gemini_ratio, unit_width * scale, unit_height * scale)
+
+        candidates = []
+        for gpt_width in range(1024, 3841, 16):
+            gpt_height = min(3840, max(1024, round(gpt_width * height / width / 16) * 16))
+            if gpt_width * gpt_height > 8_294_400 or max(gpt_width, gpt_height) > 3 * min(gpt_width, gpt_height):
+                continue
+            ratio_error = abs(gpt_width * height / (gpt_height * width) - 1)
+            if ratio_error <= 0.005:
+                size_error = ((gpt_width - width) / width) ** 2 + ((gpt_height - height) / height) ** 2
+                candidates.append((size_error, ratio_error, gpt_width, gpt_height))
+        if not candidates:
+            raise ValueError("No supported GPT Image 2 size matches this board. Choose a different board aspect ratio.")
+        _, _, gpt_width, gpt_height = min(candidates)
+        return (gemini_ratio, gpt_width, gpt_height)
 
 
 class StoryGridModelSwitch:
@@ -282,7 +365,7 @@ class StoryGridModelSwitch:
     def INPUT_TYPES(cls):
         return {
             "required": {
-                "model_choice": (["Gemini Pro", "GPT Image 2"], {"default": "Gemini Pro"}),
+                "model_choice": ("COMBO", {"options": ["Gemini Pro", "GPT Image 2"], "default": "Gemini Pro"}),
             },
             "optional": {
                 "gemini_pro_image": ("IMAGE", {"lazy": True}),
@@ -328,6 +411,7 @@ class StoryGridSliceSave:
                 "crop_trim_px": ("INT", {"default": 4, "min": 0, "max": 128, "step": 1}),
                 "save_full_grid": ("BOOLEAN", {"default": True}),
                 "save_cells": ("BOOLEAN", {"default": True}),
+                "preserve_cell_aspect": ("BOOLEAN", {"default": False}),
             },
         }
 
@@ -349,6 +433,7 @@ class StoryGridSliceSave:
         crop_trim_px=4,
         save_full_grid=True,
         save_cells=True,
+        preserve_cell_aspect=False,
     ):
         rows = int(rows)
         columns = int(columns)
@@ -357,6 +442,7 @@ class StoryGridSliceSave:
         crop_trim_px = int(crop_trim_px)
         save_full_grid = bool(save_full_grid)
         save_cells = bool(save_cells)
+        preserve_cell_aspect = bool(preserve_cell_aspect)
 
         safe_prefix = _safe_prefix(output_prefix)
         run_id = time.strftime("%Y%m%d-%H%M%S")
@@ -372,6 +458,7 @@ class StoryGridSliceSave:
             "target_width": target_width,
             "target_height": target_height,
             "crop_trim_px": crop_trim_px,
+            "preserve_cell_aspect": preserve_cell_aspect,
             "credit_prompt": credit_prompt or "",
             "grids": [],
         }
@@ -394,6 +481,10 @@ class StoryGridSliceSave:
                 ui_images.append({"filename": full_name, "subfolder": subfolder, "type": "output"})
 
             cells, boxes = _crop_cells(generated, rows, columns, crop_trim_px)
+            if preserve_cell_aspect:
+                cell_width = max(1, round(target_width / columns))
+                cell_height = max(1, round(target_height / rows))
+                cells = [_fit_to_target(cell, cell_width, cell_height) for cell in cells]
             all_cells.extend(cells)
 
             if save_cells:
@@ -411,6 +502,7 @@ class StoryGridSliceSave:
                             "row": row,
                             "column": col,
                             "crop_box": list(box),
+                            "saved_size": list(cell.size),
                             "file": str(cell_subdir / name),
                         }
                     )

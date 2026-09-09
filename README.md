@@ -1,40 +1,103 @@
-# Story Grid ComfyUI Tools
+# Story Grid · ComfyUI
 
-Custom ComfyUI nodes and workflows for generating a storyboard grid from a scenario, sending the grid and reference images to a credit/API image node, then slicing the generated sheet into individual cell images.
+한국어 · [English](README.en.md)
 
-## Contents
+![Story Grid: 참고 이미지와 장면 설명으로 만드는 스토리보드](docs/images/linkedin-story-grid.png)
 
-- `custom_nodes/story_grid_tools/`
-  - `StoryGridReference`
-  - `StoryGridReferenceBatch`
-  - `StoryGridModelSwitch`
-  - `StoryGridSliceSave`
-- `workflows/`
-  - `story_grid_credit_3x4.json`
-  - `story_grid_credit_3x4_refs_gpt.json`
-  - `story_grid_credit_3x4_refs_switch.json`
+**참고 이미지, 스타일, 장면 설명을 한 장의 스토리보드로 만들고, 각 컷까지 자동으로 저장하는 ComfyUI 워크플로우입니다.**
 
-## Install
+여러 컷을 한 보드로 생성해 반복 API 호출과 크레딧 부담을 줄이고, 인물·공간·행동의 연결성을 함께 잡는 워크플로우입니다. 전체 시퀀스를 한눈에 비교하면서 초기 연출과 브레인스토밍을 진행할 수 있습니다. 보드와 개별 컷을 자동으로 저장하므로, 편집기에서 컷마다 잘라내는 별도의 후처리가 필요 없습니다.
 
-Copy `custom_nodes/story_grid_tools` into:
+## 워크플로우
+
+![00 ASSETS부터 04 RESULT까지 정리된 워크플로우](docs/images/workflow-overview.png)
+
+[가로 컷 워크플로우 보기](docs/images/workflow-landscape.png) · [정사각 컷 워크플로우 보기](docs/images/workflow-square.png)
+
+| 영역 | 하는 일 |
+| --- | --- |
+| **00 ASSETS** | 참고 이미지를 미리 보고, 이미지별 인물·의상·소품의 역할을 작성합니다. |
+| **01 STYLE** | 연필 스토리보드 · 페인터리 3D · 실사 시네마틱 중에서 선택하고 텍스트를 자유롭게 수정합니다. |
+| **02 SEQUENCE** | 번호를 붙여 컷별 행동과 카메라 구성을 작성합니다. |
+| **03 GENERATE & LAYOUT** | 모델, 1K·2K·4K, 행·열과 컷 비율을 선택하고 그리드를 미리 봅니다. |
+| **04 RESULT** | 전체 보드, 개별 컷, 생성·분할 정보를 담은 manifest를 저장합니다. |
+
+**Gemini Pro / GPT Image 2**를 같은 워크플로우에서 선택할 수 있습니다. 모델 스위치는 지연 입력을 사용해 선택한 모델의 생성 분기만 실행합니다.
+
+## 세 가지 스타일, 계속 편집할 수 있는 프롬프트
+
+![연필 스토리보드, 페인터리 3D, 실사 시네마틱의 실제 생성 결과 비교](docs/images/style-comparison.png)
+
+*동일한 12개 장면과 참고 인물로 생성한 세 가지 스타일. 모두 GPT Image 2 · 2K, 세로 컷 9:16이며 각 보드는 1584 × 2112px입니다.*
+
+- **연필 스토리보드:** 흰 종이, 거친 흑연 선, 최소한의 명암으로 구도와 동작을 확인합니다.
+- **페인터리 3D:** 손으로 칠한 듯한 텍스처, 표현력 있는 캐릭터와 부드러운 영화 조명을 사용합니다.
+- **실사 시네마틱:** 사실적인 배우와 재질, 자연스러운 조명과 영화 촬영의 질감을 지향합니다.
+
+버튼은 기존 STYLE 입력창에 프롬프트를 넣습니다. 선택 후 직접 수정할 수 있고, 다시 버튼을 누르면 해당 프리셋으로 교체됩니다. 저장한 워크플로우에는 현재 편집한 텍스트가 보존됩니다.
+
+## 가로 컷, 세로 컷, 정사각 컷
+
+![연필 스타일로 생성한 가로 16:9, 세로 9:16, 정사각 1:1 컷 결과](docs/images/format-comparison.png)
+
+컷의 비율과 전체 보드의 비율은 다릅니다. 아래는 **3행 × 4열, 12컷**으로 실제 생성한 연필 스타일 결과입니다. 모두 GPT Image 2 · 2K를 사용했습니다.
+
+| 개별 컷 | 전체 보드 비율 | 저장 보드 크기 | 활용 예 |
+| --- | --- | --- | --- |
+| 16:9 | 64:27 | 2048 × 864px | 가로 영상의 샷 구성 |
+| 9:16 | 3:4 | 1584 × 2112px | 숏츠·릴스의 세로 구도 |
+| 1:1 | 4:3 | 2048 × 1536px | 정사각 프레임의 아이디어 탐색 |
+
+그리드 미리보기의 비율 버튼은 **개별 컷**을 기준으로 보드 크기를 맞춥니다. 행과 열도 조절할 수 있습니다. **1K·2K·4K는 전체 보드의 해상도 단계**이며, 한 컷의 해상도는 보드를 나눈 크기입니다.
+
+## 설치와 빠른 시작
+
+1. ComfyUI의 `GeminiImage2Node`, `OpenAIGPTImage1` API 노드를 사용할 수 있는 환경을 준비합니다. 해당 API 노드의 로그인·크레딧 설정이 필요합니다.
+2. 이 저장소의 [custom_nodes/story_grid_tools](custom_nodes/story_grid_tools)를 `ComfyUI/custom_nodes/story_grid_tools`에 복사합니다. ComfyUI를 재시작하고 브라우저를 새로고침합니다.
+3. [examples/references](examples/references)의 이미지 두 장을 `ComfyUI/input/story_grid_examples/`에 복사합니다.
+4. [기본 스위치 워크플로우](workflows/story_grid_credit_3x4_refs_switch.json)를 ComfyUI에 불러옵니다. **00 ASSETS**에서 아래 이미지와 순서가 보이는지 확인합니다.
+5. STYLE과 SEQUENCE를 작성하고, **03**에서 모델·해상도·그리드를 선택한 뒤 실행합니다.
+
+기본 설정은 **연필 스토리보드 · 가로 컷 16:9 · GPT Image 2 · 2K**입니다.
+
+| 프롬프트에서 부르는 이름 | 역할 | 기본 경로 |
+| --- | --- | --- |
+| **Image 1** | 그리드 배치만 참고 | 워크플로우에서 생성 |
+| **Image 2** | MAN / PURSUER · 추격자 | `story_grid_examples/pursuer.png` |
+| **Image 3** | SOMEONE / RUNNER · 도망치는 인물 | `story_grid_examples/runner.png` |
+
+`Image 1` 같은 표현은 이 워크플로우가 전달하는 첨부 순서를 설명합니다. 인물 설명은 파일명 대신 첨부 순서와 역할을 연결해 작성합니다. 직접 준비한 이미지는 경로 칸에 한 줄에 하나씩 입력하고, 이미지를 추가·삭제하거나 순서를 바꿨다면 역할 설명도 함께 맞춰주세요. 그리드 참고를 끄면 첫 어셋이 Image 1이 됩니다.
+
+## 예제와 저장 결과
+
+원하는 JSON을 ComfyUI에 불러와 참고 이미지와 장면 설명을 바꾸면 됩니다.
+
+| 스타일 | 가로 컷 16:9 | 세로 컷 9:16 | 정사각 컷 1:1 |
+| --- | --- | --- | --- |
+| 연필 스토리보드 | [JSON](examples/workflows/pencil_landscape.json) | [JSON](examples/workflows/pencil_portrait.json) | [JSON](examples/workflows/pencil_square.json) |
+| 페인터리 3D | [JSON](examples/workflows/painterly_landscape.json) | [JSON](examples/workflows/painterly_portrait.json) | [JSON](examples/workflows/painterly_square.json) |
+| 실사 시네마틱 | [JSON](examples/workflows/cinematic_landscape.json) | [JSON](examples/workflows/cinematic_portrait.json) | [JSON](examples/workflows/cinematic_square.json) |
+
+**실제 생성 결과는 다섯 보드**, 예제 JSON은 **아홉 조합의 설정 템플릿**입니다. 위 비교 이미지는 실제 생성 보드를 보기 쉽게 배치한 편집본입니다. Gemini·1K·4K의 생성 비교 결과는 포함하지 않습니다.
+
+기본 저장 위치는 `ComfyUI/output/<output_prefix>/<실행 시간>/`입니다.
 
 ```text
-ComfyUI/custom_nodes/story_grid_tools
+generated_grid.png       전체 보드
+cells/grid/
+  cell_01_r1_c1.png       첫 번째 컷
+  cell_02_r1_c2.png       두 번째 컷
+  ...
+manifest.json            프롬프트, 보드 크기, 컷 좌표와 저장 정보
 ```
 
-Then restart ComfyUI.
+## 사용하면서 확인한 점
 
-## Workflow Use
+이번 뉴욕 추격 장면 테스트에서는 **GPT Image 2가 원하는 스토리보드를 더 안정적으로 만들었습니다.** 이 제작 경험을 바탕으로 기본 예제는 GPT Image 2로 설정했습니다.
 
-Load one of the JSON files from `workflows/` in ComfyUI.
+- 한 장에 여러 컷을 생성해도 인물의 일관성, 컷 수, 경계와 동작 연결이 항상 정확하지는 않습니다. 분할은 지정한 균등 그리드를 기준으로 하므로 생성 결과의 경계를 확인하세요.
+- 컷이 많아질수록 같은 보드 해상도에서 한 컷에 배정되는 픽셀은 줄어듭니다.
+- 모델마다 지원 크기가 달라 보드에 맞추는 과정에서 크기 조정이나 가장자리 잘림이 생길 수 있습니다. 현재 GPT 크기 계산은 긴 변 3840px·약 829만 픽셀 이내에서 4K 단계를 구성하며, Gemini는 가까운 지원 비율을 사용합니다.
+- 크레딧 절감 폭은 선택한 모델·보드 크기·개별 생성 방식에 따라 달라집니다.
 
-For the switch workflow, use `Story Grid Model Switch`:
-
-- `Gemini Pro`: runs the Gemini branch.
-- `GPT Image 2`: runs the OpenAI GPT Image branch.
-
-The switch uses lazy inputs, so only the selected model branch should execute.
-
-Edit the `StoryGridReferenceBatch` reference image paths before running on a different machine.
-
-Generated output is saved by `StoryGridSliceSave` under ComfyUI's `output` directory, including the full generated grid, cropped cells, and a JSON manifest.
+워크플로우 캡처에는 [ComfyUI Workflow Image Export](https://github.com/nomadoor/ComfyUI-Workflow-Image-Export)를 사용했습니다.

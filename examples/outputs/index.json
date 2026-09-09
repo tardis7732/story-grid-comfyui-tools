@@ -1,0 +1,87 @@
+[
+  {
+    "file": "examples/outputs/pencil_landscape.png",
+    "model": "gpt-image-2",
+    "resolution": "2K",
+    "board_size": [
+      2048,
+      864
+    ],
+    "cell_size": [
+      512,
+      288
+    ],
+    "rows": 3,
+    "columns": 4,
+    "style": "pencil",
+    "panel_ratio": "16:9"
+  },
+  {
+    "file": "examples/outputs/pencil_portrait.png",
+    "model": "gpt-image-2",
+    "resolution": "2K",
+    "board_size": [
+      1584,
+      2112
+    ],
+    "cell_size": [
+      396,
+      704
+    ],
+    "rows": 3,
+    "columns": 4,
+    "style": "pencil",
+    "panel_ratio": "9:16"
+  },
+  {
+    "file": "examples/outputs/pencil_square.png",
+    "model": "gpt-image-2",
+    "resolution": "2K",
+    "board_size": [
+      2048,
+      1536
+    ],
+    "cell_size": [
+      512,
+      512
+    ],
+    "rows": 3,
+    "columns": 4,
+    "style": "pencil",
+    "panel_ratio": "1:1"
+  },
+  {
+    "file": "examples/outputs/painterly_portrait.png",
+    "model": "gpt-image-2",
+    "resolution": "2K",
+    "board_size": [
+      1584,
+      2112
+    ],
+    "cell_size": [
+      396,
+      704
+    ],
+    "rows": 3,
+    "columns": 4,
+    "style": "painterly",
+    "panel_ratio": "9:16"
+  },
+  {
+    "file": "examples/outputs/cinematic_portrait.png",
+    "model": "gpt-image-2",
+    "resolution": "2K",
+    "board_size": [
+      1584,
+      2112
+    ],
+    "cell_size": [
+      396,
+      704
+    ],
+    "rows": 3,
+    "columns": 4,
+    "style": "cinematic",
+    "panel_ratio": "9:16"
+  }
+]

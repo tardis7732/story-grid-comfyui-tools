@@ -8,3 +8,6 @@ __pycache__/
 output/
 temp/
 *.log
+.env
+.env.*
+!.env.example
